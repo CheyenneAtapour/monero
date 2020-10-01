@@ -36,6 +36,8 @@
 #include <cstring>  // memcmp
 #include <sstream>
 #include <atomic>
+#include <gmp.h> // I added this
+#include <paillier.h> // I added this
 #include "serialization/variant.h"
 #include "serialization/containers.h"
 #include "serialization/binary_archive.h"
@@ -450,6 +452,7 @@ namespace cryptonote
     uint64_t timestamp;
     crypto::hash  prev_id;
     uint32_t nonce;
+    std::string vote; // I added this - store vote as a string ciphertext and convert to mpz_t as needed
 
     BEGIN_SERIALIZE()
       VARINT_FIELD(major_version)
@@ -457,6 +460,7 @@ namespace cryptonote
       VARINT_FIELD(timestamp)
       FIELD(prev_id)
       FIELD(nonce)
+      FIELD(vote) // I added this
     END_SERIALIZE()
   };
 

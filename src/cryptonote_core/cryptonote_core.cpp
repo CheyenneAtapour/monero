@@ -1476,6 +1476,7 @@ namespace cryptonote
       m_miner.resume();
       return false;
     }
+    // TODO: before block is added, check the vote is correct
     m_blockchain_storage.add_new_block(b, bvc);
     cleanup_handle_incoming_blocks(true);
     //anyway - update miner template
