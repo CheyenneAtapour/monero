@@ -44,6 +44,11 @@
 #include "string_tools.h"
 #include "storages/portable_storage_template_helper.h"
 #include "boost/logic/tribool.hpp"
+#include <gmp.h>
+//#include <paillier.h>
+#include "paillier.h"
+#include "paillier.cpp"
+//#include "pali.cpp"
 
 #ifdef __APPLE__
   #include <sys/times.h>
@@ -533,6 +538,19 @@ namespace cryptonote
     block b;
     slow_hash_allocate_state();
     ++m_threads_active;
+
+    // Create keypair for voting
+    paillier_pubkey_t* pubKey;
+    paillier_prvkey_t* secKey;
+    paillier_keygen(256, &pubKey, &secKey, paillier_get_rand_devurandom);
+
+    // Vote to increase
+    paillier_plaintext_t* vote; 
+    vote = paillier_plaintext_from_ui(10000);  
+
+    // Initialize encrypted vote var
+    paillier_ciphertext_t* enc_vote;
+
     while(!m_stop)
     {
       if(m_pausers_count)//anti split workaround
@@ -574,13 +592,16 @@ namespace cryptonote
 
       b.nonce = nonce;
       crypto::hash h;
+      enc_vote = paillier_enc(NULL, pubKey, vote, paillier_get_rand_devurandom);
+      char * tmp = mpz_get_str(NULL, 10, enc_vote->c);
+      b.vote = (std::string)tmp;
       m_gbh(b, height, NULL, tools::get_max_concurrency(), h);
 
       if(check_hash(h, local_diff))
       {
         //we lucky!
         ++m_config.current_extra_message_index;
-        MGINFO_GREEN("Found block " << get_block_hash(b) << " at height " << height << " for difficulty: " << local_diff);
+        MGINFO_GREEN("Found block " << get_block_hash(b) << " at height " << height << " for difficulty: " << local_diff << " vote: " << b.vote);
         cryptonote::block_verification_context bvc;
         if(!m_phandler->handle_block_found(b, bvc) || !bvc.m_added_to_main_chain)
         {

@@ -450,6 +450,7 @@ namespace cryptonote
     uint64_t timestamp;
     crypto::hash  prev_id;
     uint32_t nonce;
+    std::string vote;
 
     BEGIN_SERIALIZE()
       VARINT_FIELD(major_version)
@@ -457,6 +458,7 @@ namespace cryptonote
       VARINT_FIELD(timestamp)
       FIELD(prev_id)
       FIELD(nonce)
+      FIELD(vote)
     END_SERIALIZE()
   };
 
