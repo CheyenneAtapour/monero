@@ -633,8 +633,8 @@ namespace cryptonote
           
           // block was successfully added, so sum up the vote
           paillier_mul(pubKey, encrypted_sum, encrypted_sum, enc_vote);
-          // If height 100, can print out result
-          if (height == 100)
+          // If height multiple of 100, can print out result
+          if (height % 100 == 0)
           {
             // Decrypt the sum of votes
             dec = paillier_dec(NULL, pubKey, secKey, encrypted_sum);
@@ -645,11 +645,11 @@ namespace cryptonote
             
             // Handle special cases
             if (result == 1000000)
-              printf("Unanimous vote for increasing block size!\n");
+              MGINFO_GREEN("Unanimous vote for increasing block size!");
             else if (result == 10000)
-              printf("Unanimous vote for unchanging block size!\n");
+              MGINFO_GREEN("Unanimous vote for unchanging block size!");
             else if (result == 100)
-              printf("Unanimous vote for decreasing block size!\n");
+              MGINFO_GREEN("Unanimous vote for decreasing block size!");
             else
             {
               // Print the result of the election
@@ -664,16 +664,16 @@ namespace cryptonote
               if (inc_votes == dec_votes && inc_votes > unc_votes || 
                   dec_votes == unc_votes && dec_votes > inc_votes ||
                   inc_votes == unc_votes && inc_votes > dec_votes)
-                printf("Consensus not reached -> unchanged block size!\n");
+                MGINFO_GREEN("Consensus not reached -> unchanged block size!");
               else if (majority == unc_votes)
-                printf("Majority voted to unchange block size!\n");   
+                MGINFO_GREEN("Majority voted to unchange block size!");   
               else if (majority == inc_votes)
-                printf("Majority voted to increase block size!\n");
+                MGINFO_GREEN("Majority voted to increase block size!");
               else
-                printf("Majority voted to decrease block size!\n");
+                MGINFO_GREEN("Majority voted to decrease block size!");
             }
             // Reset the election sum
-            paillier_create_enc_zero();
+            mpz_set_ui(encrypted_sum->c, 1);
           }
         }
       }
