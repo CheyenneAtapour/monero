@@ -1476,12 +1476,14 @@ namespace cryptonote
       m_miner.resume();
       return false;
     }
+
+    // TODO: Check the NIZKP for vote correctness before adding block
+
     m_blockchain_storage.add_new_block(b, bvc);
     cleanup_handle_incoming_blocks(true);
     //anyway - update miner template
     update_miner_block_template();
     m_miner.resume();
-
 
     CHECK_AND_ASSERT_MES(!bvc.m_verifivation_failed, false, "mined block failed verification");
     if(bvc.m_added_to_main_chain)

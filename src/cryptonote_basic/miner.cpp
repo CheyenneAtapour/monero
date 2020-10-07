@@ -107,6 +107,18 @@ namespace cryptonote
     const command_line::arg_descriptor<uint16_t>     arg_bg_mining_miner_target_percentage =  {"bg-mining-miner-target", "Specify maximum percentage cpu use by miner(s)", miner::BACKGROUND_MINING_DEFAULT_MINING_TARGET_PERCENTAGE, true};
   }
 
+  int max(int a, int b)
+  {
+    if (a < b)
+      return b;
+    else
+      return a;
+  }
+
+  int max3(int a, int b, int c)
+  {
+    return max(a, max(b, c));
+  }
 
   miner::miner(i_miner_handler* phandler, const get_block_hash_t &gbh):m_stop(1),
     m_template{},
@@ -552,6 +564,12 @@ namespace cryptonote
     // Initialize encrypted vote var
     paillier_ciphertext_t* enc_vote;
 
+    // Initialize encryption of 0 to hold sum
+    paillier_ciphertext_t* encrypted_sum = paillier_create_enc_zero();
+
+    // Initialize variable to hold decrypted sum of election
+    paillier_plaintext_t* dec;
+
     while(!m_stop)
     {
       if(m_pausers_count)//anti split workaround
@@ -612,6 +630,51 @@ namespace cryptonote
           //success update, lets update config
           if (!m_config_folder_path.empty())
             epee::serialization::store_t_to_json_file(m_config, m_config_folder_path + "/" + MINER_CONFIG_FILE_NAME);
+          
+          // block was successfully added, so sum up the vote
+          paillier_mul(pubKey, encrypted_sum, encrypted_sum, enc_vote);
+          // If height 100, can print out result
+          if (height == 100)
+          {
+            // Decrypt the sum of votes
+            dec = paillier_dec(NULL, pubKey, secKey, encrypted_sum);
+            gmp_printf("Decrypted sum of votes: %Zd\n", dec);
+  
+            // Convert decrypted plaintext to int
+            int result = mpz_get_ui(dec->m);
+            
+            // Handle special cases
+            if (result == 1000000)
+              printf("Unanimous vote for increasing block size!\n");
+            else if (result == 10000)
+              printf("Unanimous vote for unchanging block size!\n");
+            else if (result == 100)
+              printf("Unanimous vote for decreasing block size!\n");
+            else
+            {
+              // Print the result of the election
+              int inc_votes = result / 10000;
+              int unc_votes = (result % 10000) / 100;
+              int dec_votes = result % 100;
+            
+              // Majority will default to unchange if maximal
+              int majority = max3(unc_votes, inc_votes, dec_votes);
+
+              // If tied, default to unchange
+              if (inc_votes == dec_votes && inc_votes > unc_votes || 
+                  dec_votes == unc_votes && dec_votes > inc_votes ||
+                  inc_votes == unc_votes && inc_votes > dec_votes)
+                printf("Consensus not reached -> unchanged block size!\n");
+              else if (majority == unc_votes)
+                printf("Majority voted to unchange block size!\n");   
+              else if (majority == inc_votes)
+                printf("Majority voted to increase block size!\n");
+              else
+                printf("Majority voted to decrease block size!\n");
+            }
+            // Reset the election sum
+            paillier_create_enc_zero();
+          }
         }
       }
       nonce+=m_threads_total;
