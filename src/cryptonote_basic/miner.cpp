@@ -45,6 +45,7 @@
 #include "storages/portable_storage_template_helper.h"
 #include "boost/logic/tribool.hpp"
 #include <gmp.h>
+//#include <gmpxx.h>
 //#include <paillier.h>
 #include "paillier.h"
 #include "paillier.cpp"
